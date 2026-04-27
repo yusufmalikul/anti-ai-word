@@ -7,7 +7,7 @@ Rewrite AI-sounding text into natural, human prose. Free to host on Cloudflare P
 - Tailwind CSS
 - Vite (build tool)
 - Cloudflare Pages + Pages Functions
-- Gemini `gemini-flash-latest`
+- Gemini `gemini-2.5-flash`
 
 ## Local dev
 

@@ -2,7 +2,7 @@ interface Env {
   GEMINI_API_KEY: string;
 }
 
-const MODEL = "gemini-flash-latest";
+const MODEL = "gemini-2.5-flash";
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 const SYSTEM_PROMPT = `You rewrite AI-sounding text so it reads like a real person wrote it. Preserve the original meaning, facts, and rough length. Keep the user's language (if input is Indonesian, reply in Indonesian; if English, reply in English).
