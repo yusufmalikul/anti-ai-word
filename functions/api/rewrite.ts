@@ -34,22 +34,38 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!text) return json({ error: "Field 'text' is required" }, 400);
   if (text.length > 8000) return json({ error: "Text too long (max 8000 chars)" }, 400);
 
-  const geminiRes = await fetch(`${ENDPOINT}?key=${env.GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ role: "user", parts: [{ text }] }],
-      generationConfig: {
-        temperature: 0.9,
-        topP: 0.95,
-      },
-    }),
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [{ role: "user", parts: [{ text }] }],
+    generationConfig: {
+      temperature: 0.9,
+      topP: 0.95,
+    },
   });
 
-  if (!geminiRes.ok) {
-    const detail = await geminiRes.text();
-    return json({ error: `Gemini API error: ${geminiRes.status}`, detail }, 502);
+  let geminiRes: Response | null = null;
+  let lastDetail = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 800));
+    geminiRes = await fetch(`${ENDPOINT}?key=${env.GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+    });
+    if (geminiRes.ok) break;
+    lastDetail = await geminiRes.text();
+    if (geminiRes.status !== 503 && geminiRes.status !== 429) break;
+  }
+
+  if (!geminiRes || !geminiRes.ok) {
+    const status = geminiRes?.status ?? 0;
+    if (status === 503 || status === 429) {
+      return json(
+        { error: "Gemini is busy right now. Give it a few seconds and try again." },
+        503,
+      );
+    }
+    return json({ error: `Gemini API error: ${status}`, detail: lastDetail }, 502);
   }
 
   const data = (await geminiRes.json()) as {
